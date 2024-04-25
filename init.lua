@@ -189,6 +189,7 @@ later(function()
     completion = {
       completeopt = "menu,menuone,noinsert",
     },
+
     mapping = cmp.mapping.preset.insert({
       ["<C-n>"] = cmp.mapping.select_next_item({ behavior = cmp.SelectBehavior.Insert }),
       ["<C-p>"] = cmp.mapping.select_prev_item({ behavior = cmp.SelectBehavior.Insert }),
@@ -197,6 +198,7 @@ later(function()
       ["<C-Space>"] = cmp.mapping.complete(),
       ["<C-e>"] = cmp.mapping.abort(),
       ["<CR>"] = cmp.mapping.confirm({ select = true }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
+      ["<C-y>"] = cmp.mapping.confirm({ select = true }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
       ["<S-CR>"] = cmp.mapping.confirm({
         behavior = cmp.ConfirmBehavior.Replace,
         select = true,
@@ -263,6 +265,13 @@ later(function()
         { name = "buffer" },
       },
     })
+end)
+
+-- other keymaps 
+later(function()
+    local opts = {}
+    vim.keymap.set("n", "[b", "<cmd>bprev<cr>", opts)
+    vim.keymap.set("n", "]b", "<cmd>bnext<cr>", opts)
 end)
 
 later(function()
