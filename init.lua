@@ -25,7 +25,17 @@ local add, now, later = MiniDeps.add, MiniDeps.now, MiniDeps.later
 -- Safely execute immediately
 now(function()
 	add("AstroNvim/astrotheme")
-	require("astrotheme").setup()
+	require("astrotheme").setup({
+    style = {
+      inactive = false,
+      border = false,
+    }
+  })
+  add("navarasu/onedark.nvim")
+  require("onedark").setup({
+    style = "darker"
+  })
+  require("onedark").load()
 end)
 
 now(function()
@@ -36,8 +46,12 @@ now(function()
 	vim.opt.shiftround = true
 	vim.opt.expandtab = true
 	vim.opt.backspace = "indent,start,eol"
-  vim.opt.pumheight = 10
-  vim.opt.clipboard:append("unnamedplus")
+	vim.opt.pumheight = 10
+	vim.opt.clipboard:append("unnamedplus")
+
+	vim.g.netrw_banner = 0
+	vim.g.netrw_liststyle = 1
+
 	vim.cmd("colorscheme astrodark")
 end)
 
@@ -81,23 +95,23 @@ now(function()
 					end,
 				},
 			},
-      "hrsh7th/cmp-nvim-lsp",
+			"hrsh7th/cmp-nvim-lsp",
 		},
 	})
 
-  local capabilities = require('cmp_nvim_lsp').default_capabilities()
+	local capabilities = require("cmp_nvim_lsp").default_capabilities()
 
-  -- is used in place of on_attach, actual on_attach is in autocommand
-  local function disable_lsp_highlights(client, _)
-    client.server_capabilities.semanticTokensProvider = nil
-  end
+	-- is used in place of on_attach, actual on_attach is in autocommand
+	local function disable_lsp_highlights(client, _)
+		client.server_capabilities.semanticTokensProvider = nil
+	end
 
 	require("mason-lspconfig").setup({
 		handlers = {
 			function(server_name) -- default handler (optional)
 				require("lspconfig")[server_name].setup({
-          capabilities = capabilities
-        })
+					capabilities = capabilities,
+				})
 			end,
 			["lua_ls"] = function()
 				require("lspconfig").lua_ls.setup({
@@ -108,25 +122,25 @@ now(function()
 							},
 						},
 					},
-          capabilities = capabilities,
-          on_attach = disable_lsp_highlights
+					capabilities = capabilities,
+					on_attach = disable_lsp_highlights,
 				})
 			end,
-      ["clangd"] = function()
+			["clangd"] = function()
 				require("lspconfig").clangd.setup({
-          cmd = {
-            "clangd",
-            "--background-index",
-            "--clang-tidy",
-            "--header-insertion=iwyu",
-            "--completion-style=detailed",
-            "--function-arg-placeholders",
-            "--fallback-style=llvm",
-            "--query-driver=/usr/bin/arm-none-eabi-*",
-          },
-          capabilities = capabilities
+					cmd = {
+						"clangd",
+						"--background-index",
+						"--clang-tidy",
+						"--header-insertion=iwyu",
+						"--completion-style=detailed",
+						"--function-arg-placeholders",
+						"--fallback-style=llvm",
+						"--query-driver=/usr/bin/arm-none-eabi-*",
+					},
+					capabilities = capabilities,
 				})
-      end
+			end,
 		},
 	})
 
@@ -161,117 +175,135 @@ now(function()
 			vim.keymap.set("n", "<space>f", function()
 				vim.lsp.buf.format({ async = true })
 			end, opts)
-
 		end,
 	})
 end)
 
 later(function()
-  add({
-    source = "hrsh7th/nvim-cmp",
-    depends = {
-      "hrsh7th/cmp-cmdline",
-      "hrsh7th/cmp-buffer",
-      "hrsh7th/cmp-path",
-      "L3MON4D3/LuaSnip",
-      "saadparwaiz1/cmp_luasnip",
-      "rafamadriz/friendly-snippets"
-    }
-  })
+	add({
+		source = "hrsh7th/nvim-cmp",
+		depends = {
+			"hrsh7th/cmp-cmdline",
+			"hrsh7th/cmp-buffer",
+			"hrsh7th/cmp-path",
+			"L3MON4D3/LuaSnip",
+			"saadparwaiz1/cmp_luasnip",
+			"rafamadriz/friendly-snippets",
+		},
+	})
 
-  local cmp = require("cmp")
-  local defaults = require("cmp.config.default")()
+	local cmp = require("cmp")
+	local defaults = require("cmp.config.default")()
 
-  require("luasnip.loaders.from_vscode").lazy_load()
+	require("luasnip.loaders.from_vscode").lazy_load()
 
-  cmp.setup({
-    auto_brackets = {}, -- configure any filetype to auto add brackets
-    completion = {
-      completeopt = "menu,menuone,noinsert",
-    },
+	cmp.setup({
+		auto_brackets = {}, -- configure any filetype to auto add brackets
+		completion = {
+			completeopt = "menu,menuone,noinsert",
+		},
 
-    mapping = cmp.mapping.preset.insert({
-      ["<C-n>"] = cmp.mapping.select_next_item({ behavior = cmp.SelectBehavior.Insert }),
-      ["<C-p>"] = cmp.mapping.select_prev_item({ behavior = cmp.SelectBehavior.Insert }),
-      ["<C-b>"] = cmp.mapping.scroll_docs(-4),
-      ["<C-f>"] = cmp.mapping.scroll_docs(4),
-      ["<C-Space>"] = cmp.mapping.complete(),
-      ["<C-e>"] = cmp.mapping.abort(),
-      ["<CR>"] = cmp.mapping.confirm({ select = true }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
-      ["<C-y>"] = cmp.mapping.confirm({ select = true }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
-      ["<S-CR>"] = cmp.mapping.confirm({
-        behavior = cmp.ConfirmBehavior.Replace,
-        select = true,
-      }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
-      ["<C-CR>"] = function(fallback)
-        cmp.abort()
-        fallback()
-      end,
-    }),
-    snippet = {
-      expand = function(args)
-        require('luasnip').lsp_expand(args.body)
-      end,
-    },
-    sources = cmp.config.sources({
-      { name = "nvim_lsp" },
-      { name = "path" },
-    }, {
-      { name = "buffer" },
-    }),
-    formatting = {
-      format = function(_, item)
-        local max_width = 25
-        local fixed_width = true
-        local ellipsis_char = "..."
+		mapping = cmp.mapping.preset.insert({
+			["<C-n>"] = cmp.mapping.select_next_item({ behavior = cmp.SelectBehavior.Insert }),
+			["<C-p>"] = cmp.mapping.select_prev_item({ behavior = cmp.SelectBehavior.Insert }),
+			["<C-b>"] = cmp.mapping.scroll_docs(-4),
+			["<C-f>"] = cmp.mapping.scroll_docs(4),
+			["<C-Space>"] = cmp.mapping.complete(),
+			["<C-e>"] = cmp.mapping.abort(),
+			["<CR>"] = cmp.mapping.confirm({ select = true }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
+			["<C-y>"] = cmp.mapping.confirm({ select = true }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
+			["<S-CR>"] = cmp.mapping.confirm({
+				behavior = cmp.ConfirmBehavior.Replace,
+				select = true,
+			}), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
+			["<C-CR>"] = function(fallback)
+				cmp.abort()
+				fallback()
+			end,
+		}),
+		snippet = {
+			expand = function(args)
+				require("luasnip").lsp_expand(args.body)
+			end,
+		},
+		sources = cmp.config.sources({
+			{ name = "nvim_lsp" },
+			{ name = "path" },
+		}, {
+			{ name = "buffer" },
+		}),
+		formatting = {
+			format = function(_, item)
+				local max_width = 25
+				local fixed_width = true
+				local ellipsis_char = "..."
 
-        item.menu = ""
+				item.menu = ""
 
-        local label = item.abbr:gsub("%s+", "")
-        if string.len(label) > max_width then
-          item.abbr = string.sub(label, 0, max_width - string.len(ellipsis_char)) .. ellipsis_char
-        elseif string.len(label) < max_width and fixed_width then
-          item.abbr = label .. string.rep(" ", max_width - string.len(label))
-        else
-          item.abbr = label
-        end
+				local label = item.abbr:gsub("%s+", "")
+				if string.len(label) > max_width then
+					item.abbr = string.sub(label, 0, max_width - string.len(ellipsis_char)) .. ellipsis_char
+				elseif string.len(label) < max_width and fixed_width then
+					item.abbr = label .. string.rep(" ", max_width - string.len(label))
+				else
+					item.abbr = label
+				end
 
-        return item
-      end
-    },
-    experimental = {
-      ghost_text = true
-    },
-    sorting = defaults.sorting,
-  })
+				return item
+			end,
+		},
+		experimental = {
+			ghost_text = true,
+		},
+		sorting = defaults.sorting,
+	})
 
-    cmp.setup.cmdline(":", {
-      mapping = cmp.mapping.preset.cmdline(),
-      sources = cmp.config.sources({
-        { name = "path" },
-      }, {
-        {
-          name = "cmdline",
-          option = {
-            ignore_cmds = { "Man", "!" },
-          },
-        },
-      }),
-    })
+	cmp.setup.cmdline(":", {
+		mapping = cmp.mapping.preset.cmdline(),
+		sources = cmp.config.sources({
+			{ name = "path" },
+		}, {
+			{
+				name = "cmdline",
+				option = {
+					ignore_cmds = { "Man", "!" },
+				},
+			},
+		}),
+	})
 
-    cmp.setup.cmdline("/", {
-      mapping = cmp.mapping.preset.cmdline(),
-      sources = {
-        { name = "buffer" },
-      },
-    })
+	cmp.setup.cmdline("/", {
+		mapping = cmp.mapping.preset.cmdline(),
+		sources = {
+			{ name = "buffer" },
+		},
+	})
 end)
 
--- other keymaps 
+-- other keymaps
 later(function()
-    local opts = {}
-    vim.keymap.set("n", "[b", "<cmd>bprev<cr>", opts)
-    vim.keymap.set("n", "]b", "<cmd>bnext<cr>", opts)
+	local opts = {}
+	vim.keymap.set("n", "<S-h>", "<cmd>bprev<cr>", opts)
+	vim.keymap.set("n", "<S-l>", "<cmd>bnext<cr>", opts)
+end)
+
+later(function()
+	require("mini.pick").setup()
+  local opts = {}
+  vim.keymap.set("n", "<space><space>", "<cmd>Pick files<cr>", opts)
+  vim.keymap.set("n", "<space>ff", "<cmd>Pick files<cr>", opts)
+  vim.keymap.set("n", "<space>fg", "<cmd>Pick grep_live<cr>", opts)
+end)
+
+later(function()
+  require("mini.files").setup()
+  local opts = {}
+  vim.keymap.set("n", "<space>e", "<cmd>Explore<cr>", opts)
+  vim.keymap.set("n", "<space>fe", "<cmd>:lua MiniFiles.open()<cr>", opts)
+end)
+
+later(function()
+	require("mini.statusline").setup()
 end)
 
 later(function()
@@ -282,9 +314,6 @@ later(function()
 	require("mini.comment").setup()
 end)
 
-later(function()
-	require("mini.pick").setup()
-end)
 
 later(function()
 	require("mini.surround").setup()
@@ -311,6 +340,6 @@ later(function()
 	require("nvim-treesitter.configs").setup({
 		ensure_installed = { "lua", "vimdoc" },
 		highlight = { enable = true },
-    additional_vim_regex_highlighting = false,
+		additional_vim_regex_highlighting = false,
 	})
 end)
